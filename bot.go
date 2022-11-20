@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/search"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/nautilis/netease_music_bot/logging"
 	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/song_detail"
@@ -57,6 +59,8 @@ func StartBot() {
 				handleSubscribe(update)
 			} else if strings.HasPrefix(update.Message.Text, "/week_history") {
 				handleWeekHistory(update)
+			} else {
+				handleSearch(update)
 			}
 		} else if update.CallbackQuery != nil {
 			if strings.HasPrefix(update.CallbackQuery.Data, "/song") {
@@ -71,6 +75,55 @@ func handleStart(update tgbotapi.Update) {
 	newMsg := tgbotapi.NewMessage(msg.Chat.ID, "this is a bot for netease music\nsend /subscribe/{netease_uid} to subscribe a user\nsend song name to search song\n")
 	//newMsg.ReplyToMessageID = update.Message.MessageID
 	bot.Send(newMsg)
+}
+
+func handleSearch(update tgbotapi.Update) {
+	keywords := strings.TrimSpace(update.Message.Text)
+
+	searchResp := search.Query(&search.Data{
+		S:      keywords,
+		Type:   1,
+		Limit:  10,
+		Offset: 0,
+	}, NetEaseCookie)
+
+	if searchResp.Code != 200 {
+		logging.Errorf("fail to search music, keywords: %s, resp:%v", keywords, searchResp)
+		return
+	}
+
+	var textList []string
+	var songIds []int64
+	songs := searchResp.Result.Songs
+	for idx, s := range songs {
+		textList = append(textList, fmt.Sprintf("%d. %s - %s", idx+1, s.Name, s.Ar[0].Name))
+		songIds = append(songIds, s.ID)
+		if idx == 9 { //
+			break
+		}
+	}
+	text := strings.Join(textList, "\n")
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+
+	rows := len(songIds) / 5
+	if len(songIds)%5 != 0 {
+		rows += 1
+	}
+	var inlineKeyBoardButtons = make([][]tgbotapi.InlineKeyboardButton, rows)
+	for i := 0; i < rows; i++ {
+		inlineKeyBoardButtons[i] = []tgbotapi.InlineKeyboardButton{}
+		for j := i * 5; j < len(songIds) && j < (i+1)*5; j++ {
+			cbData := "/song/" + strconv.FormatInt(songIds[j], 10)
+			button := tgbotapi.InlineKeyboardButton{
+				Text:         strconv.Itoa(j + 1),
+				CallbackData: &cbData,
+			}
+			inlineKeyBoardButtons[i] = append(inlineKeyBoardButtons[i], button)
+		}
+	}
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyBoardButtons}
+	bot.Send(msg)
+
 }
 
 func handleSubscribe(update tgbotapi.Update) {

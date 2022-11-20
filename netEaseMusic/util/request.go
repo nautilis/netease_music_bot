@@ -144,6 +144,9 @@ func Request(url string, data interface{}, cookie map[string]string, targetResp 
 	}
 
 	err = json.Unmarshal(content, targetResp)
+	if err != nil {
+		return nil, err
+	}
 	cookieMap := map[string]string{}
 	for _, c := range resp.Cookies() {
 		tmp := strings.Split(c.String(), ";")
