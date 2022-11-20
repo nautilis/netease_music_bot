@@ -140,12 +140,12 @@ func Request(url string, data interface{}, cookie map[string]string, targetResp 
 	defer resp.Body.Close()
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fail to read content: %v", err)
 	}
 
 	err = json.Unmarshal(content, targetResp)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fail to unmarshal content, jsonStr: %s, err: %v", string(content), err)
 	}
 	cookieMap := map[string]string{}
 	for _, c := range resp.Cookies() {

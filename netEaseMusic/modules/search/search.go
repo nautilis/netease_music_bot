@@ -87,7 +87,7 @@ type SearchResp struct {
 				Name   string `json:"name"`
 				SongID int64  `json:"songId"`
 			} `json:"originSongSimpleData"`
-			Pop       int64 `json:"pop"`
+			Pop       float64 `json:"pop"`
 			Privilege struct {
 				ChargeInfoList []struct {
 					ChargeMessage interface{} `json:"chargeMessage"`
