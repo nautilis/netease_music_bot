@@ -232,7 +232,7 @@ func handleSongPull(update tgbotapi.Update) {
 			}
 			audio.Performer = song.Ar[0].Name
 			audio.Title = song.Name
-			audio.Caption = "by @neteast_music_bot"
+			audio.Caption = "by @ncloud_music_bot"
 			audio.Duration = int(duration / 1000)
 			bot.Send(tgbotapi.NewChatAction(chatId, "upload_document"))
 			_, err = bot.Send(audio)
