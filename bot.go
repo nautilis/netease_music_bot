@@ -198,6 +198,7 @@ func handleSongPull(update tgbotapi.Update) {
 	chatId := update.CallbackQuery.Message.Chat.ID
 	time.Sleep(1 * time.Second)
 	songResp := song_url.Query(songid, NetEaseCookie)
+	bot.Send(tgbotapi.NewChatAction(chatId, "typing"))
 	if songResp.Code == 200 {
 		if len(songResp.Data) > 0 {
 			musicUrl := songResp.Data[0].URL
@@ -233,6 +234,7 @@ func handleSongPull(update tgbotapi.Update) {
 			audio.Title = song.Name
 			audio.Caption = "by @neteast_music_bot"
 			audio.Duration = int(duration / 1000)
+			bot.Send(tgbotapi.NewChatAction(chatId, "upload_document"))
 			_, err = bot.Send(audio)
 			if err != nil {
 				logging.Errorf("fail to send to bot %s", err.Error())
