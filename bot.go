@@ -72,7 +72,7 @@ func StartBot() {
 
 func handleStart(update tgbotapi.Update) {
 	msg := update.Message
-	newMsg := tgbotapi.NewMessage(msg.Chat.ID, "this is a bot for netease music\nsend /subscribe/{netease_uid} to subscribe a user\nsend song name to search song\n")
+	newMsg := tgbotapi.NewMessage(msg.Chat.ID, "欢迎关注云村机器人👏🏻\n\n发送 /subscribe/{网易云用户id} 可以关注某个用户\n\n发送任意歌曲名字搜索歌曲\n\n")
 	//newMsg.ReplyToMessageID = update.Message.MessageID
 	bot.Send(newMsg)
 }
@@ -131,14 +131,14 @@ func handleSubscribe(update tgbotapi.Update) {
 	subid := strings.Split(update.Message.Text, "/")[2]
 	botData.AddSubUid(strconv.FormatInt(uid, 10), subid)
 	logging.Infof("new subscribe => uid %d subscribe %s", uid, subid)
-	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "now you can tab /week_history access his/her music record"))
+	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "你已成功关注，现在可以发送 /week_history 获取关注的听歌记录\nnow you can tab /week_history access his/her music record"))
 }
 
 func handleWeekHistory(update tgbotapi.Update) {
 	uid := update.Message.From.ID
 	subUids := botData.GetSubUid(strconv.FormatInt(uid, 10))
 	if len(subUids) == 0 {
-		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "could not found any netease you had subscribe, you can tap /subscribe/{netease_uid} to subscribe firstly."))
+		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "暂时没有发现你存在关注的网易云用户，请先发送 \"/subscribe/用户id\" 关注用户\ncould not found any netease you had subscribe, you can tap /subscribe/{netease_uid} to subscribe firstly."))
 		return
 	}
 	for _, subid := range subUids {
