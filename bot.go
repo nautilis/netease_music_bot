@@ -13,7 +13,6 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/nautilis/netease_music_bot/logging"
-	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/login"
 	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/song_detail"
 	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/song_url"
 	"github.com/nautilis/netease_music_bot/netEaseMusic/modules/user_record"
@@ -25,26 +24,6 @@ type BussCode int
 const (
 	UserNotOpenPlayRecord BussCode = 403
 )
-
-var bot *tgbotapi.BotAPI
-var NetEaseCookie map[string]string
-
-func LoginNetEase() {
-	cookie, resp, err := login.Query(&login.LoginData{
-		Username:      setting.AppSetting.NetEaseAccount,
-		Password:      setting.AppSetting.NetEasePwd,
-		RememberLogin: "true",
-		CsrfToken:     "",
-	}, NetEaseCookie)
-	if err != nil {
-		logging.Errorf("login err: %s", err.Error())
-	} else {
-		if resp.Code == 200 {
-			logging.Infof("loging netease success , cookie => %v", cookie)
-			NetEaseCookie = cookie
-		}
-	}
-}
 
 func StartBot() {
 	_bot, err := tgbotapi.NewBotAPI(setting.AppSetting.TelegramToke)
@@ -94,62 +73,62 @@ func handleStart(update tgbotapi.Update) {
 	bot.Send(newMsg)
 }
 
-var uid2Subid = map[string]string{}
-
 func handleSubscribe(update tgbotapi.Update) {
 	uid := update.Message.From.ID
 	subid := strings.Split(update.Message.Text, "/")[2]
-	uid2Subid[strconv.FormatInt(uid, 10)] = subid
+	botData.AddSubUid(strconv.FormatInt(uid, 10), subid)
 	logging.Infof("new subscribe => uid %d subscribe %s", uid, subid)
 	bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "now you can tab /week_history access his/her music record"))
 }
 
 func handleWeekHistory(update tgbotapi.Update) {
 	uid := update.Message.From.ID
-	subid, ok := uid2Subid[strconv.FormatInt(uid, 10)]
-	if !ok {
+	subUids := botData.GetSubUid(strconv.FormatInt(uid, 10))
+	if len(subUids) == 0 {
 		bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "could not found any netease you had subscribe, you can tap /subscribe/{netease_uid} to subscribe firstly."))
 		return
 	}
-	songs, code, err := GetMusicRecord(subid)
-	if err != nil {
-		logging.Errorf("fail to get music record, %v", err.Error())
-		return
-	}
-	if code != 0 {
-		return
-	}
-
-	var textList []string
-	var songIds []int64
-	for idx, s := range songs {
-		textList = append(textList, fmt.Sprintf("%d. %s - %s", idx+1, s.Name, s.Ar))
-		songIds = append(songIds, s.Id)
-		if idx == 9 {
-			break
+	for _, subid := range subUids {
+		songs, code, err := GetMusicRecord(subid)
+		if err != nil {
+			logging.Errorf("fail to get music record, %v", err.Error())
+			return
 		}
-	}
-	text := strings.Join(textList, "\n")
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+		if code != 0 {
+			return
+		}
 
-	rows := len(songIds) / 5
-	if len(songIds)%5 != 0 {
-		rows += 1
-	}
-	var inlineKeyBoardButtons = make([][]tgbotapi.InlineKeyboardButton, rows)
-	for i := 0; i < rows; i++ {
-		inlineKeyBoardButtons[i] = []tgbotapi.InlineKeyboardButton{}
-		for j := i * 5; j < len(songIds) && j < (i+1)*5; j++ {
-			cbData := "/song/" + strconv.FormatInt(songIds[j], 10)
-			button := tgbotapi.InlineKeyboardButton{
-				Text:         strconv.Itoa(j + 1),
-				CallbackData: &cbData,
+		var textList []string
+		var songIds []int64
+		for idx, s := range songs {
+			textList = append(textList, fmt.Sprintf("%d. %s - %s", idx+1, s.Name, s.Ar))
+			songIds = append(songIds, s.Id)
+			if idx == 29 { // 只返归前20 首
+				break
 			}
-			inlineKeyBoardButtons[i] = append(inlineKeyBoardButtons[i], button)
 		}
+		text := strings.Join(textList, "\n")
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+
+		rows := len(songIds) / 5
+		if len(songIds)%5 != 0 {
+			rows += 1
+		}
+		var inlineKeyBoardButtons = make([][]tgbotapi.InlineKeyboardButton, rows)
+		for i := 0; i < rows; i++ {
+			inlineKeyBoardButtons[i] = []tgbotapi.InlineKeyboardButton{}
+			for j := i * 5; j < len(songIds) && j < (i+1)*5; j++ {
+				cbData := "/song/" + strconv.FormatInt(songIds[j], 10)
+				button := tgbotapi.InlineKeyboardButton{
+					Text:         strconv.Itoa(j + 1),
+					CallbackData: &cbData,
+				}
+				inlineKeyBoardButtons[i] = append(inlineKeyBoardButtons[i], button)
+			}
+		}
+		msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyBoardButtons}
+		bot.Send(msg)
 	}
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: inlineKeyBoardButtons}
-	bot.Send(msg)
 
 }
 
