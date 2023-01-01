@@ -28,7 +28,7 @@ const (
 )
 
 func StartBot() {
-	_bot, err := tgbotapi.NewBotAPI(setting.AppSetting.TelegramToke)
+	_bot, err := tgbotapi.NewBotAPI(setting.AppSetting.TelegramToken)
 	if err != nil {
 		panic("fail to init bot " + err.Error())
 	}
