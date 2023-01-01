@@ -10,3 +10,9 @@
 - [ ] 关注人有效性验证， 取消关注
 
 ![img.png](img.png)
+
+### 运行
+```
+docker pull nautilis/netease_music_bot
+docker run -tid -e NetEaseAccount="your neteaset account" -e NetEasePwd="md5(your netease password)" -e TelegramToken="your telegram bot token" nautilis/netease_music_bot:latest 
+```
