@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: netease-music-bot
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: music-bot-deployment
+  namespace: netease-music-bot
+spec:
+  selector:
+    matchLabels:
+      app: netease-music-bot
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: netease-music-bot
+    spec:
+      containers:
+        - name: netease-music-bot
+          image:  nautilis/netease_music_bot:latest
+          ports:
+            - containerPort: 9897
+          envFrom:
+            - configMapRef:
+                name: netease-music-bot-env

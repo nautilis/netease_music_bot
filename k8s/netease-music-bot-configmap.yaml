@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  NetEaseAccount: ${your netease music account}
+  NetEasePwd: ${md5(your netease music password)}
+  TelegramToken: ${telegram bot tokan}
+kind: ConfigMap
+metadata:
+  name: netease-music-bot-env
+  namespace: netease-music-bot
