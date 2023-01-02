@@ -12,7 +12,15 @@
 ![img.png](img.png)
 
 ### 运行
+#### docker
 ```
 docker pull nautilis/netease_music_bot
 docker run -tid -e NetEaseAccount="your neteaset account" -e NetEasePwd="md5(your netease password)" -e TelegramToken="your telegram bot token" nautilis/netease_music_bot:latest 
+```
+
+#### k8s
+```
+cd k8s
+kubectl apply -f netease-music-bot-configmap.yaml
+kubectl apply -f netease-music-bot-deployment.yaml
 ```
